@@ -1,4 +1,5 @@
 import { storage } from '../../utils/storage';
+import { Task, TaskPriority, TaskStatus } from '../../types/task';
 
 describe('Storage Utilities', () => {
   test('deve ter os métodos saveTasks e getTasks definidos', () => {
@@ -13,14 +14,14 @@ describe('Storage Utilities', () => {
     expect(Array.isArray(tasks)).toBe(true);
   });
 
-  test('saveTasks deve executar sem erros', () => {
-    const mockTasks = [
+  test('saveTasks deve executar sem erros com dados válidos', () => {
+    const mockTasks: Task[] = [
       { 
         id: '1', 
         title: 'Tarefa Teste', 
         description: 'Descrição',
-        status: 'TODO', 
-        priority: 'MEDIUM', 
+        status: 'TODO' as TaskStatus, 
+        priority: 'MEDIUM' as TaskPriority, 
         responsible: 'Teste',
         createdAt: new Date(),
       }
