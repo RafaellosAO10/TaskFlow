@@ -1,24 +1,33 @@
 import { storage } from '../../utils/storage';
 import { Task } from '../../types/task';
 
-// Mock simples que funciona em qualquer ambiente
-const mockLocalStorage = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-};
+// Mock global do localStorage que FUNCIONA
+const mockLocalStorage = (() => {
+  let store: { [key: string]: string } = {};
+  return {
+    getItem: jest.fn((key: string) => store[key] || null),
+    setItem: jest.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: jest.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: jest.fn(() => {
+      store = {};
+    }),
+  };
+})();
 
-// Só define no objeto global se window existir (evita erro no GitHub Actions)
-if (typeof window !== 'undefined') {
-  Object.defineProperty(window, 'localStorage', { value: mockLocalStorage });
-} else {
-  // Mock para ambiente Node.js (GitHub Actions)
-  global.localStorage = mockLocalStorage as any;
-}
+// Aplica o mock GLOBALMENTE
+Object.defineProperty(global, 'localStorage', {
+  value: mockLocalStorage,
+  writable: true
+});
 
 describe('Storage Utilities', () => {
   beforeEach(() => {
-    mockLocalStorage.getItem.mockClear();
-    mockLocalStorage.setItem.mockClear();
+    mockLocalStorage.clear();
+    jest.clearAllMocks();
   });
 
   test('deve salvar tarefas no localStorage', () => {
@@ -30,13 +39,16 @@ describe('Storage Utilities', () => {
         status: 'TODO', 
         priority: 'MEDIUM', 
         responsible: 'Teste',
-        createdAt: new Date(),
+        createdAt: new Date('2024-10-23'),
       }
     ];
 
     storage.saveTasks(mockTasks);
 
-    expect(mockLocalStorage.setItem).toHaveBeenCalled();
+    expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+      'taskflow_tasks',
+      JSON.stringify(mockTasks)
+    );
   });
 
   test('deve carregar tarefas do localStorage quando existem dados', () => {
@@ -48,25 +60,23 @@ describe('Storage Utilities', () => {
         status: 'TODO', 
         priority: 'MEDIUM', 
         responsible: 'Teste',
-        createdAt: new Date(),
+        createdAt: new Date('2024-10-23'),
       }
     ];
 
-    // Simula que há dados no localStorage
-    mockLocalStorage.getItem.mockReturnValue(JSON.stringify(mockTasks));
+    // Pré-popula o localStorage
+    mockLocalStorage.setItem('taskflow_tasks', JSON.stringify(mockTasks));
 
     const tasks = storage.getTasks();
 
     expect(tasks).toHaveLength(1);
     expect(tasks[0].title).toBe('Tarefa Teste');
+    expect(mockLocalStorage.getItem).toHaveBeenCalledWith('taskflow_tasks');
   });
 
   test('deve retornar array vazio quando não há dados no localStorage', () => {
-    // Simula localStorage vazio
-    mockLocalStorage.getItem.mockReturnValue(null);
-
     const tasks = storage.getTasks();
-
     expect(Array.isArray(tasks)).toBe(true);
+    expect(mockLocalStorage.getItem).toHaveBeenCalledWith('taskflow_tasks');
   });
 });
