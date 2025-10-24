@@ -41,7 +41,7 @@ Siga os passos abaixo para executar o projeto localmente:
 
 ```bash
 # Clone o repositório
-git clone https://github.com/seu-usuario/taskflow.git
+git clone https://github.com/RafaellosAO10/TaskFlow
 
 # Acesse a pasta do projeto
 cd taskflow
